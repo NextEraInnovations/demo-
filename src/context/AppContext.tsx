@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { SupabaseService } from '../services/supabaseService';
 import { User, Product, Order, SupportTicket, Promotion, Analytics, ReturnRequest, PendingUser, WholesalerAnalytics } from '../types';
 
 interface PlatformSettings {
@@ -783,9 +785,142 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const { 
+    users, 
+    products, 
+    orders, 
+    tickets, 
+    promotions, 
+    returnRequests, 
+    pendingUsers, 
+    loading, 
+    error 
+  } = useSupabaseData();
+
+  // Update state with real data from Supabase
+  const enhancedState = {
+    ...state,
+    users: users.length > 0 ? users : state.users,
+    products: products.length > 0 ? products : state.products,
+    orders: orders.length > 0 ? orders : state.orders,
+    tickets: tickets.length > 0 ? tickets : state.tickets,
+    promotions: promotions.length > 0 ? promotions : state.promotions,
+    returnRequests: returnRequests.length > 0 ? returnRequests : state.returnRequests,
+    pendingUsers: pendingUsers.length > 0 ? pendingUsers : state.pendingUsers,
+    loading,
+    error
+  };
+
+  // Enhanced dispatch that also updates Supabase
+  const enhancedDispatch = async (action: AppAction) => {
+    try {
+      switch (action.type) {
+        case 'ADD_PRODUCT':
+          await SupabaseService.createProduct(action.payload);
+          break;
+        case 'UPDATE_PRODUCT':
+          await SupabaseService.updateProduct(action.payload.id, action.payload);
+          break;
+        case 'DELETE_PRODUCT':
+          await SupabaseService.deleteProduct(action.payload);
+          break;
+        case 'ADD_ORDER':
+          await SupabaseService.createOrder(action.payload);
+          break;
+        case 'UPDATE_ORDER':
+          await SupabaseService.updateOrder(action.payload.id, action.payload);
+          break;
+        case 'ADD_TICKET':
+          await SupabaseService.createSupportTicket(action.payload);
+          break;
+        case 'UPDATE_TICKET':
+          await SupabaseService.updateSupportTicket(action.payload.id, action.payload);
+          break;
+        case 'ADD_PROMOTION':
+          await SupabaseService.createPromotion(action.payload);
+          break;
+        case 'UPDATE_PROMOTION':
+          await SupabaseService.updatePromotion(action.payload.id, action.payload);
+          break;
+        case 'APPROVE_PROMOTION':
+          const promotion = enhancedState.promotions.find(p => p.id === action.payload.id);
+          if (promotion) {
+            await SupabaseService.updatePromotion(action.payload.id, {
+              ...promotion,
+              status: 'approved',
+              active: true,
+              reviewedAt: new Date().toISOString(),
+              reviewedBy: action.payload.adminId
+            });
+          }
+          break;
+        case 'REJECT_PROMOTION':
+          const rejectedPromotion = enhancedState.promotions.find(p => p.id === action.payload.id);
+          if (rejectedPromotion) {
+            await SupabaseService.updatePromotion(action.payload.id, {
+              ...rejectedPromotion,
+              status: 'rejected',
+              active: false,
+              reviewedAt: new Date().toISOString(),
+              reviewedBy: action.payload.adminId,
+              rejectionReason: action.payload.reason
+            });
+          }
+          break;
+        case 'ADD_RETURN_REQUEST':
+          await SupabaseService.createReturnRequest(action.payload);
+          break;
+        case 'APPROVE_RETURN_REQUEST':
+          const returnRequest = enhancedState.returnRequests.find(r => r.id === action.payload.id);
+          if (returnRequest) {
+            await SupabaseService.updateReturnRequest(action.payload.id, {
+              ...returnRequest,
+              status: 'approved',
+              approvedAmount: action.payload.approvedAmount,
+              refundMethod: action.payload.refundMethod as any,
+              processedBy: action.payload.supportId,
+              processedAt: new Date().toISOString()
+            });
+          }
+          break;
+        case 'REJECT_RETURN_REQUEST':
+          const rejectedReturn = enhancedState.returnRequests.find(r => r.id === action.payload.id);
+          if (rejectedReturn) {
+            await SupabaseService.updateReturnRequest(action.payload.id, {
+              ...rejectedReturn,
+              status: 'rejected',
+              rejectionReason: action.payload.reason,
+              processedBy: action.payload.supportId,
+              processedAt: new Date().toISOString()
+            });
+          }
+          break;
+        case 'APPROVE_USER':
+          await SupabaseService.approvePendingUser(action.payload.pendingUserId, action.payload.adminId);
+          break;
+        case 'REJECT_USER':
+          await SupabaseService.rejectPendingUser(action.payload.pendingUserId, action.payload.adminId, action.payload.reason);
+          break;
+        case 'ADD_PENDING_USER':
+          await SupabaseService.createPendingUser(action.payload);
+          break;
+        default:
+          // For actions that don't need Supabase updates, just use local dispatch
+          dispatch(action);
+          return;
+      }
+      
+      // Also update local state for immediate UI feedback
+      dispatch(action);
+    } catch (error) {
+      console.error('Error updating Supabase:', error);
+      // Still update local state even if Supabase fails
+      dispatch(action);
+    }
+  };
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state: enhancedState, dispatch: enhancedDispatch }}>
       {children}
     </AppContext.Provider>
   );
