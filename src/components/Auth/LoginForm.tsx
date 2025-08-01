@@ -106,11 +106,14 @@ export function LoginForm() {
             <p className="text-sm text-gray-600 mb-4">Don't have an account?</p>
             <button
               onClick={() => setShowRegistration(true)}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 lg:py-4 rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm lg:text-base"
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 lg:py-4 rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm lg:text-base mb-3"
             >
               <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
-              Register New Account
+              Sign Up as Wholesaler or Retailer
             </button>
+            <p className="text-xs text-gray-500">
+              Applications require admin approval
+            </p>
           </div>
         </div>
         <div className="mt-6 sm:mt-8 lg:mt-10">
