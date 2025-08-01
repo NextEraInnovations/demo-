@@ -140,37 +140,6 @@ export function useSupabaseData() {
       setLoading(true);
       setError(null);
 
-      // Check if tables exist before fetching data
-      const { data: tablesData, error: tablesError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public');
-
-      if (tablesError) {
-        console.warn('Could not check table existence:', tablesError);
-        // Continue with empty arrays if we can't check tables
-        setUsers([]);
-        setProducts([]);
-        setOrders([]);
-        setTickets([]);
-        setPromotions([]);
-        setReturnRequests([]);
-        setPendingUsers([]);
-        setLoading(false);
-        return;
-      }
-
-      const existingTables = tablesData?.map(t => t.table_name) || [];
-      const requiredTables = ['users', 'products', 'orders', 'order_items', 'support_tickets', 'promotions', 'return_requests', 'return_items', 'pending_users'];
-      const missingTables = requiredTables.filter(table => !existingTables.includes(table));
-
-      if (missingTables.length > 0) {
-        console.warn('Missing database tables:', missingTables);
-        setError(`Database tables not found: ${missingTables.join(', ')}. Please run database migrations.`);
-        setLoading(false);
-        return;
-      }
-
       // Fetch all data in parallel
       const [
         usersResult,
