@@ -240,7 +240,7 @@ export function useSupabaseData() {
   }, []);
 
   return {
-    users: error ? [] : supabaseUsers,
+    users: error ? [] : users,
     products: error ? [] : products,
     orders: error ? [] : orders,
     tickets: error ? [] : tickets,

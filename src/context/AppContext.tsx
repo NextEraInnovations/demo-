@@ -302,7 +302,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { 
-    users: supabaseUsers, 
+    users, 
     products, 
     orders, 
     tickets, 
@@ -316,7 +316,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Update state with real data from Supabase
   const enhancedState = {
     ...state,
-    users: error ? state.users : (supabaseUsers.length > 0 ? supabaseUsers : state.users),
+    users: error ? state.users : (users.length > 0 ? users : state.users),
     products: error ? state.products : (products.length > 0 ? products : state.products),
     orders: error ? state.orders : (orders.length > 0 ? orders : state.orders),
     tickets: error ? state.tickets : (tickets.length > 0 ? tickets : state.tickets),
