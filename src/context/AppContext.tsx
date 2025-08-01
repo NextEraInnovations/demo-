@@ -800,13 +800,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Update state with real data from Supabase
   const enhancedState = {
     ...state,
-    users: users.length > 0 ? users : state.users,
-    products: products.length > 0 ? products : state.products,
-    orders: orders.length > 0 ? orders : state.orders,
-    tickets: tickets.length > 0 ? tickets : state.tickets,
-    promotions: promotions.length > 0 ? promotions : state.promotions,
-    returnRequests: returnRequests.length > 0 ? returnRequests : state.returnRequests,
-    pendingUsers: pendingUsers.length > 0 ? pendingUsers : state.pendingUsers,
+    users: error ? state.users : (users.length > 0 ? users : state.users),
+    products: error ? state.products : (products.length > 0 ? products : state.products),
+    orders: error ? state.orders : (orders.length > 0 ? orders : state.orders),
+    tickets: error ? state.tickets : (tickets.length > 0 ? tickets : state.tickets),
+    promotions: error ? state.promotions : (promotions.length > 0 ? promotions : state.promotions),
+    returnRequests: error ? state.returnRequests : (returnRequests.length > 0 ? returnRequests : state.returnRequests),
+    pendingUsers: error ? state.pendingUsers : (pendingUsers.length > 0 ? pendingUsers : state.pendingUsers),
     loading,
     error
   };
