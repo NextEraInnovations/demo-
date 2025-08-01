@@ -36,9 +36,11 @@ import {
   Building,
   Phone,
   MapPin,
-  Star
+  Star,
+  UserPlus
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { UserRegistrationForm } from '../UserManagement/UserRegistrationForm';
 import { User as UserType, Order, Promotion, PendingUser, WholesalerAnalytics } from '../../types';
 
 interface AdminDashboardProps {
@@ -71,6 +73,7 @@ export function AdminDashboard({ activeTab }: AdminDashboardProps) {
     phone: '',
     address: ''
   });
+  const [showUserRegistration, setShowUserRegistration] = useState(false);
 
   const currentUser = state.currentUser!;
 
@@ -574,15 +577,16 @@ export function AdminDashboard({ activeTab }: AdminDashboardProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">User Management</h2>
         <div className="flex items-center gap-4">
-          {selectedUsers.length > 0 && (
-            <button
-              onClick={handleBulkVerifyUsers}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center gap-2 font-medium"
-            >
-              <UserCheck className="w-4 h-4" />
-              Verify Selected ({selectedUsers.length})
-            </button>
-          )}
+          <button
+            onClick={() => setShowUserRegistration(true)}
+            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          >
+            <UserPlus className="w-5 h-5" />
+            Add User
+          </button>
+          <div className="text-sm text-gray-500">
+            {state.users.length} total users
+          </div>
         </div>
       </div>
 
@@ -695,6 +699,11 @@ export function AdminDashboard({ activeTab }: AdminDashboardProps) {
           </div>
         ))}
       </div>
+      
+      <UserRegistrationForm 
+        isOpen={showUserRegistration} 
+        onClose={() => setShowUserRegistration(false)} 
+      />
     </div>
   );
 
