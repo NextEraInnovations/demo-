@@ -240,13 +240,13 @@ export function useSupabaseData() {
   }, []);
 
   return {
-    users,
-    products,
-    orders,
-    tickets,
-    promotions,
-    returnRequests,
-    pendingUsers,
+    users: error ? [] : supabaseUsers,
+    products: error ? [] : products,
+    orders: error ? [] : orders,
+    tickets: error ? [] : tickets,
+    promotions: error ? [] : promotions,
+    returnRequests: error ? [] : returnRequests,
+    pendingUsers: error ? [] : pendingUsers,
     loading,
     error,
     refetch: fetchData
