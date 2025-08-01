@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { User, LogIn } from 'lucide-react';
+import { User, LogIn, UserPlus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { UserRegistrationForm } from '../UserManagement/UserRegistrationForm';
 
 export function LoginForm() {
   const { state, dispatch } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showRegistration, setShowRegistration] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +73,46 @@ export function LoginForm() {
           </button>
         </form>
 
+        {/* Admin Setup for Clean Database */}
+        <div className="mt-6 sm:mt-8 lg:mt-10 border-t pt-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 sm:mb-4 lg:mb-6 text-center">First Time Setup</h3>
+          <button
+            onClick={() => {
+              // Create initial admin user for clean database
+              const adminUser = {
+                id: 'admin-1',
+                name: 'System Administrator',
+                email: 'admin@nwi.com',
+                role: 'admin' as const,
+                businessName: 'NWI Platform',
+                phone: '+27 11 123 4567',
+                address: 'Johannesburg, South Africa',
+                verified: true,
+                status: 'active' as const,
+                createdAt: new Date().toISOString()
+              };
+              dispatch({ type: 'ADD_USER', payload: adminUser });
+              dispatch({ type: 'SET_USER', payload: adminUser });
+            }}
+            className="w-full text-xs sm:text-sm bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 px-2 sm:px-3 lg:px-4 py-2 lg:py-3 rounded-lg sm:rounded-xl border border-purple-200 hover:from-purple-100 hover:to-indigo-100 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+          >
+            Create Initial Admin (First Time Only)
+          </button>
+        </div>
+
+        {/* Registration Option */}
+        <div className="mt-6 sm:mt-8 lg:mt-10 border-t pt-6">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-4">Don't have an account?</p>
+            <button
+              onClick={() => setShowRegistration(true)}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 lg:py-4 rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm lg:text-base"
+            >
+              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+              Register New Account
+            </button>
+          </div>
+        </div>
         <div className="mt-6 sm:mt-8 lg:mt-10">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 sm:mb-4 lg:mb-6 text-center">Quick Login (Demo)</h3>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
@@ -101,6 +143,11 @@ export function LoginForm() {
           </div>
         </div>
       </div>
+      
+      <UserRegistrationForm 
+        isOpen={showRegistration} 
+        onClose={() => setShowRegistration(false)} 
+      />
     </div>
   );
 }
