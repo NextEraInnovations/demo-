@@ -160,44 +160,55 @@ export function useSupabaseData() {
         supabase.from('promotions').select('*'),
         supabase.from('return_requests').select('*'),
         supabase.from('return_items').select('*'),
-        supabase.from('pending_users').select('*')
+        supabase.from('pending_users').select('*').eq('status', 'pending')
       ]);
 
-      // Check for errors
-      if (usersResult.error) throw usersResult.error;
-      if (productsResult.error) throw productsResult.error;
-      if (ordersResult.error) throw ordersResult.error;
-      if (orderItemsResult.error) throw orderItemsResult.error;
-      if (ticketsResult.error) throw ticketsResult.error;
-      if (promotionsResult.error) throw promotionsResult.error;
-      if (returnRequestsResult.error) throw returnRequestsResult.error;
-      if (returnItemsResult.error) throw returnItemsResult.error;
-      if (pendingUsersResult.error) throw pendingUsersResult.error;
+      // Check for errors and handle missing tables gracefully
+      const handleResult = (result: any, tableName: string) => {
+        if (result.error) {
+          if (result.error.code === '42P01') {
+            console.warn(`Table ${tableName} does not exist yet. Please run database migrations.`);
+            return [];
+          }
+          throw result.error;
+        }
+        return result.data || [];
+      };
 
       // Transform and set data
-      setUsers(usersResult.data?.map(transformUser) || []);
-      setProducts(productsResult.data?.map(transformProduct) || []);
-      setTickets(ticketsResult.data?.map(transformTicket) || []);
-      setPromotions(promotionsResult.data?.map(transformPromotion) || []);
-      setPendingUsers(pendingUsersResult.data?.map(transformPendingUser) || []);
+      const usersData = handleResult(usersResult, 'users');
+      const productsData = handleResult(productsResult, 'products');
+      const ordersData = handleResult(ordersResult, 'orders');
+      const orderItemsData = handleResult(orderItemsResult, 'order_items');
+      const ticketsData = handleResult(ticketsResult, 'support_tickets');
+      const promotionsData = handleResult(promotionsResult, 'promotions');
+      const returnRequestsData = handleResult(returnRequestsResult, 'return_requests');
+      const returnItemsData = handleResult(returnItemsResult, 'return_items');
+      const pendingUsersData = handleResult(pendingUsersResult, 'pending_users');
+
+      setUsers(usersData.map(transformUser));
+      setProducts(productsData.map(transformProduct));
+      setTickets(ticketsData.map(transformTicket));
+      setPromotions(promotionsData.map(transformPromotion));
+      setPendingUsers(pendingUsersData.map(transformPendingUser));
 
       // Transform orders with their items
-      const ordersWithItems = ordersResult.data?.map(order => {
-        const orderItems = orderItemsResult.data?.filter(item => item.order_id === order.id) || [];
+      const ordersWithItems = ordersData.map((order: any) => {
+        const orderItems = orderItemsData.filter((item: any) => item.order_id === order.id);
         return transformOrder(order, orderItems);
-      }) || [];
+      });
       setOrders(ordersWithItems);
 
       // Transform return requests with their items
-      const returnRequestsWithItems = returnRequestsResult.data?.map(returnReq => {
-        const returnItems = returnItemsResult.data?.filter(item => item.return_request_id === returnReq.id) || [];
+      const returnRequestsWithItems = returnRequestsData.map((returnReq: any) => {
+        const returnItems = returnItemsData.filter((item: any) => item.return_request_id === returnReq.id);
         return transformReturnRequest(returnReq, returnItems);
-      }) || [];
+      });
       setReturnRequests(returnRequestsWithItems);
 
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching data');
     } finally {
       setLoading(false);
     }

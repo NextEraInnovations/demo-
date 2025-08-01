@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { SupabaseService } from '../services/supabaseService';
+import { SupabaseService } from '../services/supabaseService';
 import { User, Product, Order, SupportTicket, Promotion, Analytics, ReturnRequest, PendingUser, WholesalerAnalytics } from '../types';
 
 interface PlatformSettings {
@@ -786,7 +787,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { 
-    users, 
+    users: supabaseUsers, 
     products, 
     orders, 
     tickets, 
@@ -800,7 +801,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Update state with real data from Supabase
   const enhancedState = {
     ...state,
-    users: error ? state.users : (users.length > 0 ? users : state.users),
+    users: error ? state.users : (supabaseUsers.length > 0 ? supabaseUsers : state.users),
     products: error ? state.products : (products.length > 0 ? products : state.products),
     orders: error ? state.orders : (orders.length > 0 ? orders : state.orders),
     tickets: error ? state.tickets : (tickets.length > 0 ? tickets : state.tickets),
@@ -813,6 +814,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Enhanced dispatch that also updates Supabase
   const enhancedDispatch = async (action: AppAction) => {
+    // First update local state for immediate UI feedback
+    dispatch(action);
+    
     try {
       switch (action.type) {
         case 'ADD_PRODUCT':
@@ -904,18 +908,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         case 'ADD_PENDING_USER':
           await SupabaseService.createPendingUser(action.payload);
           break;
-        default:
-          // For actions that don't need Supabase updates, just use local dispatch
-          dispatch(action);
-          return;
+        // For other actions, they only update local state
       }
-      
-      // Also update local state for immediate UI feedback
-      dispatch(action);
     } catch (error) {
       console.error('Error updating Supabase:', error);
-      // Still update local state even if Supabase fails
-      dispatch(action);
+      // The local state was already updated above for immediate feedback
     }
   };
 

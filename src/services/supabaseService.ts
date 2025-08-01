@@ -20,7 +20,7 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformUser(data);
   }
 
   static async updateUser(id: string, updates: Partial<User>) {
@@ -41,7 +41,17 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformUser(data);
+  }
+
+  static async getUsers() {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data?.map(this.transformUser) || [];
   }
 
   // Product operations
@@ -63,7 +73,7 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformProduct(data);
   }
 
   static async updateProduct(id: string, updates: Partial<Product>) {
@@ -84,7 +94,7 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformProduct(data);
   }
 
   static async deleteProduct(id: string) {
@@ -94,6 +104,16 @@ export class SupabaseService {
       .eq('id', id);
 
     if (error) throw error;
+  }
+
+  static async getProducts() {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data?.map(this.transformProduct) || [];
   }
 
   // Order operations
@@ -130,7 +150,7 @@ export class SupabaseService {
 
     if (itemsError) throw itemsError;
 
-    return orderData;
+    return this.transformOrder(orderData, order.items);
   }
 
   static async updateOrder(id: string, updates: Partial<Order>) {
@@ -147,7 +167,51 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+
+    // Get order items
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', id);
+
+    if (itemsError) throw itemsError;
+
+    const items = itemsData?.map(item => ({
+      productId: item.product_id,
+      productName: item.product_name,
+      quantity: item.quantity,
+      price: parseFloat(item.price),
+      total: parseFloat(item.total)
+    })) || [];
+
+    return this.transformOrder(data, items);
+  }
+
+  static async getOrders() {
+    const { data: ordersData, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (ordersError) throw ordersError;
+
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('order_items')
+      .select('*');
+
+    if (itemsError) throw itemsError;
+
+    return ordersData?.map(order => {
+      const orderItems = itemsData?.filter(item => item.order_id === order.id) || [];
+      const items = orderItems.map(item => ({
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: item.quantity,
+        price: parseFloat(item.price),
+        total: parseFloat(item.total)
+      }));
+      return this.transformOrder(order, items);
+    }) || [];
   }
 
   // Support ticket operations
@@ -167,7 +231,7 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformTicket(data);
   }
 
   static async updateSupportTicket(id: string, updates: Partial<SupportTicket>) {
@@ -185,7 +249,17 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformTicket(data);
+  }
+
+  static async getSupportTickets() {
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data?.map(this.transformTicket) || [];
   }
 
   // Promotion operations
@@ -207,7 +281,7 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformPromotion(data);
   }
 
   static async updatePromotion(id: string, updates: Partial<Promotion>) {
@@ -231,7 +305,17 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformPromotion(data);
+  }
+
+  static async getPromotions() {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data?.map(this.transformPromotion) || [];
   }
 
   // Return request operations
@@ -272,7 +356,7 @@ export class SupabaseService {
 
     if (itemsError) throw itemsError;
 
-    return returnData;
+    return this.transformReturnRequest(returnData, returnRequest.items);
   }
 
   static async updateReturnRequest(id: string, updates: Partial<ReturnRequest>) {
@@ -292,7 +376,55 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+
+    // Get return items
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('return_items')
+      .select('*')
+      .eq('return_request_id', id);
+
+    if (itemsError) throw itemsError;
+
+    const items = itemsData?.map(item => ({
+      productId: item.product_id,
+      productName: item.product_name,
+      quantity: item.quantity,
+      reason: item.reason,
+      condition: item.condition,
+      unitPrice: parseFloat(item.unit_price),
+      totalRefund: parseFloat(item.total_refund)
+    })) || [];
+
+    return this.transformReturnRequest(data, items);
+  }
+
+  static async getReturnRequests() {
+    const { data: returnsData, error: returnsError } = await supabase
+      .from('return_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (returnsError) throw returnsError;
+
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('return_items')
+      .select('*');
+
+    if (itemsError) throw itemsError;
+
+    return returnsData?.map(returnReq => {
+      const returnItems = itemsData?.filter(item => item.return_request_id === returnReq.id) || [];
+      const items = returnItems.map(item => ({
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: item.quantity,
+        reason: item.reason,
+        condition: item.condition,
+        unitPrice: parseFloat(item.unit_price),
+        totalRefund: parseFloat(item.total_refund)
+      }));
+      return this.transformReturnRequest(returnReq, items);
+    }) || [];
   }
 
   // Pending user operations
@@ -313,7 +445,7 @@ export class SupabaseService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformPendingUser(data);
   }
 
   static async approvePendingUser(pendingUserId: string, adminId: string) {
@@ -356,7 +488,7 @@ export class SupabaseService {
 
     if (updateError) throw updateError;
 
-    return newUser;
+    return this.transformUser(newUser);
   }
 
   static async rejectPendingUser(pendingUserId: string, adminId: string, reason: string) {
@@ -371,6 +503,17 @@ export class SupabaseService {
       .eq('id', pendingUserId);
 
     if (error) throw error;
+  }
+
+  static async getPendingUsers() {
+    const { data, error } = await supabase
+      .from('pending_users')
+      .select('*')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: false });
+
+    if (error) throw error;
+    return data?.map(this.transformPendingUser) || [];
   }
 
   // Platform settings operations
@@ -400,5 +543,127 @@ export class SupabaseService {
       });
 
     if (error) throw error;
+  }
+
+  // Transform database rows to application types
+  private static transformUser(row: any): User {
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      businessName: row.business_name,
+      phone: row.phone,
+      address: row.address,
+      verified: row.verified,
+      status: row.status,
+      createdAt: row.created_at
+    };
+  }
+
+  private static transformProduct(row: any): Product {
+    return {
+      id: row.id,
+      wholesalerId: row.wholesaler_id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
+      stock: row.stock,
+      minOrderQuantity: row.min_order_quantity,
+      category: row.category,
+      imageUrl: row.image_url || '',
+      available: row.available,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  private static transformOrder(row: any, items: OrderItem[]): Order {
+    return {
+      id: row.id,
+      retailerId: row.retailer_id,
+      wholesalerId: row.wholesaler_id,
+      items,
+      total: parseFloat(row.total),
+      status: row.status,
+      paymentStatus: row.payment_status,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      pickupTime: row.pickup_time,
+      notes: row.notes
+    };
+  }
+
+  private static transformTicket(row: any): SupportTicket {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      userName: row.user_name,
+      subject: row.subject,
+      description: row.description,
+      status: row.status,
+      priority: row.priority,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      assignedTo: row.assigned_to
+    };
+  }
+
+  private static transformPromotion(row: any): Promotion {
+    return {
+      id: row.id,
+      wholesalerId: row.wholesaler_id,
+      title: row.title,
+      description: row.description,
+      discount: parseFloat(row.discount),
+      validFrom: row.valid_from,
+      validTo: row.valid_to,
+      active: row.active,
+      productIds: row.product_ids || [],
+      status: row.status,
+      submittedAt: row.submitted_at,
+      reviewedAt: row.reviewed_at,
+      reviewedBy: row.reviewed_by,
+      rejectionReason: row.rejection_reason
+    };
+  }
+
+  private static transformReturnRequest(row: any, items: ReturnItem[]): ReturnRequest {
+    return {
+      id: row.id,
+      orderId: row.order_id,
+      retailerId: row.retailer_id,
+      wholesalerId: row.wholesaler_id,
+      reason: row.reason,
+      description: row.description,
+      status: row.status,
+      priority: row.priority,
+      requestedAmount: parseFloat(row.requested_amount),
+      approvedAmount: row.approved_amount ? parseFloat(row.approved_amount) : undefined,
+      items,
+      images: row.images || [],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      processedBy: row.processed_by,
+      processedAt: row.processed_at,
+      rejectionReason: row.rejection_reason,
+      refundMethod: row.refund_method,
+      trackingNumber: row.tracking_number
+    };
+  }
+
+  private static transformPendingUser(row: any): PendingUser {
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      businessName: row.business_name,
+      phone: row.phone,
+      address: row.address,
+      registrationReason: row.registration_reason,
+      submittedAt: row.submitted_at,
+      documents: row.documents || []
+    };
   }
 }
